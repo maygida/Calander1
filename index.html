@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050810">
+<meta name="description" content="رزنامة هجرية وميلادية - تطبيق PWA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="رزنامة">
+<link rel="manifest" href="manifest.json">
+<title>رزنامة ✦ هجري وميلادي</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --ink:#050810; --ink2:#0d1220; --ink3:#141928; --ink4:#1c2335;
+  --gold:#d4a843; --gold2:#f0c96a; --gold3:#b8882e;
+  --goldg:rgba(212,168,67,.12); --goldb:rgba(212,168,67,.22);
+  --pearl:#e8e2d4; --pearl2:#b8b09a; --pearl3:#6a6256; --pearl4:#3a3530;
+  --jade:#3ecf8e; --jadeg:rgba(62,207,142,.1);
+  --r:14px; --rr:20px;
+}
+html { scroll-behavior:smooth; }
+body {
+  font-family:'Tajawal',sans-serif;
+  background:var(--ink); color:var(--pearl);
+  min-height:100vh; min-height:100dvh;
+  overflow-x:hidden; position:relative;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 0%, rgba(212,168,67,.07) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 85% 100%, rgba(62,207,142,.04) 0%, transparent 55%);
+}
+.root { position:relative; z-index:1; display:flex; flex-direction:column; min-height:100dvh; }
+
+/* TOP BAR */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:env(safe-area-inset-top,14px) 20px 14px;
+  background:rgba(5,8,16,.7); backdrop-filter:blur(24px);
+  border-bottom:1px solid rgba(212,168,67,.1);
+  position:sticky; top:0; z-index:200;
+}
+.topbar-logo { font-family:'Amiri',serif; font-size:1.35rem; color:var(--gold2); }
+.topbar-logo span { color:var(--pearl3); font-size:.7rem; display:block; font-family:'Tajawal',sans-serif; }
+.topbar-actions { display:flex; gap:8px; }
+.icon-btn {
+  width:36px; height:36px; border-radius:10px;
+  background:var(--ink3); border:1px solid var(--ink4);
+  color:var(--pearl3); font-size:1rem;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .2s;
+}
+.icon-btn:hover { border-color:var(--gold3); color:var(--gold); background:var(--goldg); }
+.icon-btn:active { transform:scale(.92); }
+
+/* MAIN */
+.main { flex:1; overflow-y:auto; padding:16px 16px 90px; }
+
+/* TODAY STRIP */
+.today-strip {
+  background:var(--ink2); border:1px solid var(--goldb);
+  border-radius:var(--rr); padding:18px 20px; margin-bottom:16px;
+  display:grid; grid-template-columns:1fr 1px 1fr; align-items:center;
+  position:relative; overflow:hidden;
+  animation:slideDown .4s cubic-bezier(.23,1,.32,1);
+}
+.today-strip::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--gold) 40%, var(--jade) 70%, transparent);
+}
+.today-strip::after {
+  content:'اليوم'; position:absolute; top:7px; left:50%; transform:translateX(-50%);
+  font-size:.55rem; color:var(--pearl4); letter-spacing:.2em;
+}
+.ts-block { text-align:center; padding:6px 12px; }
+.ts-label { font-size:.58rem; color:var(--pearl3); letter-spacing:.12em; text-transform:uppercase; margin-bottom:5px; }
+.ts-day { font-family:'Amiri',serif; font-size:2.8rem; line-height:1; font-weight:700; }
+.ts-month { font-size:.78rem; margin-top:4px; font-weight:500; }
+.ts-year { font-size:.62rem; color:var(--pearl3); margin-top:2px; }
+.ts-block.hijri .ts-day { color:var(--gold2); }
+.ts-block.hijri .ts-month { color:var(--gold); }
+.ts-block.greg .ts-day { color:var(--jade); }
+.ts-block.greg .ts-month { color:var(--jade); }
+.ts-divider { background:linear-gradient(180deg, transparent, var(--goldb), transparent); height:70px; align-self:center; }
+
+/* TABS */
+.tabs {
+  display:flex; background:var(--ink2); border:1px solid var(--ink4);
+  border-radius:12px; padding:3px; margin-bottom:14px; gap:3px;
+}
+.tab {
+  flex:1; padding:8px 6px; border-radius:9px; border:none;
+  background:none; color:var(--pearl3); font-family:'Tajawal',sans-serif;
+  font-size:.8rem; font-weight:500; cursor:pointer; transition:all .22s;
+}
+.tab.on { background:var(--gold); color:var(--ink); font-weight:700; box-shadow:0 2px 12px rgba(212,168,67,.3); }
+
+/* CALENDAR CARD */
+.cal-card {
+  background:var(--ink2); border:1px solid rgba(212,168,67,.13);
+  border-radius:var(--rr); overflow:hidden; margin-bottom:16px;
+  animation:fadeUp .35s cubic-bezier(.23,1,.32,1);
+}
+.cal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 18px; background:var(--ink3);
+  border-bottom:1px solid rgba(212,168,67,.08);
+}
+.cal-title-wrap { text-align:center; flex:1; }
+.cal-title-main { font-family:'Amiri',serif; font-size:1.25rem; color:var(--gold2); }
+.cal-title-sub { font-size:.68rem; color:var(--pearl3); margin-top:2px; }
+.nav-arrow {
+  width:38px; height:38px; border-radius:10px;
+  background:var(--ink4); border:1px solid rgba(212,168,67,.1);
+  color:var(--gold); font-size:1.2rem;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .18s; flex-shrink:0;
+}
+.nav-arrow:hover { background:var(--goldg); border-color:var(--gold3); }
+.nav-arrow:active { transform:scale(.9); }
+
+/* WEEKROW */
+.weekrow { display:grid; grid-template-columns:repeat(7,1fr); padding:10px 8px 4px; }
+.wd { text-align:center; font-size:.62rem; color:var(--pearl3); letter-spacing:.04em; padding:4px 0; }
+.wd.fri { color:var(--gold); }
+
+/* DAYGRID */
+.daygrid { display:grid; grid-template-columns:repeat(7,1fr); padding:4px 8px 12px; gap:2px; }
+.dc {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-radius:10px; cursor:pointer; transition:all .18s;
+  min-height:46px; position:relative; padding:3px 1px; user-select:none;
+}
+.dc:not(.empty):hover { background:var(--goldg); }
+.dc.fri:not(.empty) .gd { color:var(--gold); }
+.dc.other { opacity:.28; }
+.dc.today { background:linear-gradient(135deg, var(--goldg), rgba(212,168,67,.06)); border:1px solid rgba(212,168,67,.35); }
+.dc.today .gd { color:var(--gold2); }
+.dc.today .hd { color:var(--gold); }
+.dc.sel { background:var(--gold); border:1px solid var(--gold2); box-shadow:0 4px 16px rgba(212,168,67,.4); }
+.dc.sel .gd, .dc.sel .hd { color:var(--ink) !important; }
+.gd { font-size:.9rem; font-weight:600; color:var(--pearl); line-height:1; }
+.hd { font-family:'Amiri',serif; font-size:.62rem; color:var(--pearl3); margin-top:2px; }
+.event-dot { width:4px; height:4px; border-radius:50%; background:var(--gold); position:absolute; bottom:3px; }
+.dc.sel .event-dot { background:var(--ink); }
+
+/* SEL CARD */
+.sel-card {
+  background:var(--ink2); border:1px solid rgba(212,168,67,.13);
+  border-radius:var(--rr); padding:18px 20px; margin-bottom:16px;
+  position:relative; overflow:hidden;
+}
+.sel-card::after {
+  content:''; position:absolute; right:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg, var(--gold), var(--jade));
+}
+.sel-title { font-family:'Amiri',serif; font-size:1.05rem; color:var(--gold2); margin-bottom:14px; }
+.detail-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04);
+}
+.detail-row:last-child { border-bottom:none; }
+.dl { font-size:.72rem; color:var(--pearl3); }
+.dv { font-family:'Amiri',serif; font-size:.98rem; color:var(--pearl); }
+.dv.gold { color:var(--gold2); }
+.dv.jade { color:var(--jade); }
+.event-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(212,168,67,.1); border:1px solid rgba(212,168,67,.25);
+  color:var(--gold2); font-size:.68rem; padding:3px 10px;
+  border-radius:20px; margin-top:10px;
+}
+
+/* SECTION HEAD */
+.section-head {
+  display:flex; align-items:center; gap:10px; margin-bottom:12px; margin-top:4px;
+}
+.sh-text { font-size:.68rem; color:var(--pearl3); letter-spacing:.14em; text-transform:uppercase; }
+.sh-line { flex:1; height:1px; background:rgba(212,168,67,.1); }
+.sh-icon { font-size:.85rem; }
+
+/* OCC LIST */
+.occ-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.occ-item {
+  background:var(--ink2); border:1px solid var(--ink4);
+  border-radius:14px; padding:13px 16px;
+  display:flex; align-items:center; gap:12px; transition:border-color .2s;
+}
+.occ-item:hover { border-color:rgba(212,168,67,.25); }
+.occ-badge {
+  width:38px; height:38px; border-radius:10px; flex-shrink:0;
+  background:var(--goldg); border:1px solid rgba(212,168,67,.2);
+  display:flex; align-items:center; justify-content:center; font-size:1.1rem;
+}
+.occ-info { flex:1; }
+.occ-name { font-size:.88rem; font-weight:600; color:var(--pearl); }
+.occ-date { font-size:.68rem; color:var(--pearl3); margin-top:3px; }
+.occ-tag {
+  font-size:.65rem; padding:3px 8px; border-radius:20px; white-space:nowrap;
+  background:var(--ink3); border:1px solid var(--ink4); color:var(--pearl4);
+}
+.occ-tag.soon { color:var(--gold); border-color:rgba(212,168,67,.2); background:var(--goldg); }
+.occ-tag.today-tag { color:var(--jade); border-color:rgba(62,207,142,.2); background:var(--jadeg); }
+
+/* INSTALL BANNER */
+.install-banner {
+  background:linear-gradient(135deg, rgba(212,168,67,.1), rgba(62,207,142,.07));
+  border:1px solid rgba(212,168,67,.2); border-radius:14px;
+  padding:13px 16px; margin-bottom:14px;
+  display:none; align-items:center; gap:12px; cursor:pointer;
+}
+.install-banner.show { display:flex; animation:fadeUp .3s ease; }
+.ib-text { flex:1; }
+.ib-text strong { display:block; font-size:.85rem; color:var(--gold2); }
+.ib-text small { font-size:.68rem; color:var(--pearl3); }
+.ib-close { background:none; border:none; color:var(--pearl3); font-size:.85rem; cursor:pointer; padding:4px; }
+
+/* BOTTOM NAV */
+.bottomnav {
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:500px;
+  background:rgba(5,8,16,.88); backdrop-filter:blur(30px);
+  border-top:1px solid rgba(212,168,67,.1);
+  display:flex; padding:8px 12px env(safe-area-inset-bottom,10px); gap:4px; z-index:200;
+}
+.bn-item {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  gap:3px; padding:7px 4px; border-radius:12px; border:none; background:none;
+  color:var(--pearl4); cursor:pointer; transition:all .2s; font-family:'Tajawal',sans-serif;
+}
+.bn-item:hover { color:var(--pearl2); }
+.bn-item.on { color:var(--gold); background:var(--goldg); }
+.bn-icon { font-size:1.25rem; line-height:1; }
+.bn-lbl { font-size:.58rem; }
+
+/* PAGES */
+.page { display:none; }
+.page.on { display:block; animation:fadeUp .3s cubic-bezier(.23,1,.32,1); }
+
+/* CLOCK */
+.clock-widget {
+  background:var(--ink2); border:1px solid var(--ink4);
+  border-radius:var(--rr); padding:24px 20px; text-align:center; margin-bottom:16px;
+}
+.clock-time { font-family:'Amiri',serif; font-size:3.5rem; color:var(--gold2); line-height:1; }
+.clock-date { font-size:.8rem; color:var(--pearl3); margin-top:8px; }
+.clock-hijri { font-family:'Amiri',serif; font-size:1.1rem; color:var(--gold); margin-top:6px; }
+
+/* HIJRI PAGE */
+.year-nav {
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  background:var(--ink2); border:1px solid var(--ink4); border-radius:12px; padding:8px 14px;
+}
+.year-lbl { flex:1; text-align:center; font-family:'Amiri',serif; font-size:1.1rem; color:var(--gold2); }
+.year-btn { background:none; border:none; color:var(--gold); font-size:1.2rem; cursor:pointer; padding:4px 8px; border-radius:8px; transition:background .15s; }
+.year-btn:hover { background:var(--goldg); }
+.hijri-months-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
+.hm-card {
+  background:var(--ink2); border:1px solid var(--ink4); border-radius:12px;
+  padding:12px 10px; text-align:center; cursor:pointer; transition:all .2s;
+}
+.hm-card:hover { border-color:rgba(212,168,67,.3); background:var(--goldg); }
+.hm-card.active { border-color:var(--gold); background:var(--goldg); }
+.hm-num { font-size:.58rem; color:var(--pearl4); margin-bottom:3px; }
+.hm-name { font-family:'Amiri',serif; font-size:.95rem; color:var(--gold2); line-height:1.3; }
+.hm-greg { font-size:.58rem; color:var(--pearl4); margin-top:3px; }
+
+/* CONVERT PAGE */
+.conv-card {
+  background:var(--ink2); border:1px solid var(--ink4); border-radius:var(--rr); padding:20px; margin-bottom:16px;
+}
+.conv-title { font-size:.72rem; color:var(--pearl3); letter-spacing:.1em; text-transform:uppercase; margin-bottom:14px; }
+.conv-row { display:flex; gap:10px; align-items:flex-end; margin-bottom:12px; }
+.conv-input-wrap { flex:1; }
+.conv-label { font-size:.62rem; color:var(--pearl3); margin-bottom:5px; }
+.conv-input {
+  width:100%; background:var(--ink3); border:1px solid var(--ink4);
+  border-radius:10px; padding:9px 10px; color:var(--pearl);
+  font-family:'Tajawal',sans-serif; font-size:.85rem; outline:none;
+  transition:border-color .2s; direction:ltr; text-align:center;
+}
+.conv-input:focus { border-color:var(--gold3); }
+.conv-btn {
+  width:100%; padding:11px; background:var(--gold); border:none;
+  border-radius:10px; color:var(--ink); font-family:'Tajawal',sans-serif;
+  font-size:.88rem; font-weight:700; cursor:pointer; margin-top:4px; transition:all .2s;
+}
+.conv-btn:hover { background:var(--gold2); box-shadow:0 4px 16px rgba(212,168,67,.4); }
+.conv-btn:active { transform:scale(.97); }
+.conv-result {
+  background:var(--ink3); border-radius:10px; padding:12px 14px;
+  font-family:'Amiri',serif; font-size:1.05rem; color:var(--gold2);
+  text-align:center; min-height:44px; display:flex; align-items:center; justify-content:center;
+  margin-top:12px;
+}
+
+/* ANIMATIONS */
+@keyframes slideDown { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+@media (max-width:360px) {
+  .dc { min-height:40px; }
+  .gd { font-size:.8rem; }
+  .hd { font-size:.55rem; }
+  .ts-day { font-size:2rem; }
+}
+</style>
+</head>
+<body>
+<div class="root">
+
+<header class="topbar">
+  <div class="topbar-logo">
+    رزنامة ✦
+    <span>التقويم الهجري والميلادي</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-btn" onclick="goToday()" title="اليوم">◎</button>
+    <button class="icon-btn" onclick="toggleTheme()" title="المظهر">◑</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="install-banner" id="installBanner">
+    <span style="font-size:1.5rem">📲</span>
+    <div class="ib-text">
+      <strong>تثبيت التطبيق</strong>
+      <small>أضفه إلى شاشتك الرئيسية</small>
+    </div>
+    <button class="ib-close" onclick="event.stopPropagation();document.getElementById('installBanner').classList.remove('show')">✕</button>
+  </div>
+
+  <!-- CALENDAR PAGE -->
+  <div class="page on" id="page-cal">
+    <div class="today-strip">
+      <div class="ts-block hijri">
+        <div class="ts-label">هجري</div>
+        <div class="ts-day" id="ts-hday">—</div>
+        <div class="ts-month" id="ts-hmonth">—</div>
+        <div class="ts-year" id="ts-hyear">—</div>
+      </div>
+      <div class="ts-divider"></div>
+      <div class="ts-block greg">
+        <div class="ts-label">ميلادي</div>
+        <div class="ts-day" id="ts-gday">—</div>
+        <div class="ts-month" id="ts-gmonth">—</div>
+        <div class="ts-year" id="ts-gyear">—</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab on" id="tab-g" onclick="setView('g')">ميلادي</button>
+      <button class="tab" id="tab-h" onclick="setView('h')">هجري</button>
+    </div>
+
+    <div class="cal-card">
+      <div class="cal-header">
+        <button class="nav-arrow" onclick="prevM()">‹</button>
+        <div class="cal-title-wrap">
+          <div class="cal-title-main" id="cal-main">—</div>
+          <div class="cal-title-sub" id="cal-sub">—</div>
+        </div>
+        <button class="nav-arrow" onclick="nextM()">›</button>
+      </div>
+      <div class="weekrow" id="weekrow"></div>
+      <div class="daygrid" id="daygrid"></div>
+    </div>
+
+    <div class="sel-card">
+      <div class="sel-title">📅 تفاصيل اليوم المختار</div>
+      <div class="detail-row"><span class="dl">التاريخ الميلادي</span><span class="dv jade" id="det-greg">—</span></div>
+      <div class="detail-row"><span class="dl">التاريخ الهجري</span><span class="dv gold" id="det-hijri">—</span></div>
+      <div class="detail-row"><span class="dl">اليوم</span><span class="dv" id="det-day">—</span></div>
+      <div class="detail-row"><span class="dl">رقم الأسبوع</span><span class="dv" id="det-week">—</span></div>
+      <div id="det-ev-wrap" style="display:none">
+        <span class="event-chip">🌙 <span id="det-ev">—</span></span>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <span class="sh-icon">🌙</span>
+      <span class="sh-text">مناسبات قادمة</span>
+      <div class="sh-line"></div>
+    </div>
+    <div class="occ-list" id="occList"></div>
+  </div>
+
+  <!-- TODAY PAGE -->
+  <div class="page" id="page-today">
+    <div class="clock-widget">
+      <div class="clock-time" id="clock">--:--:--</div>
+      <div class="clock-date" id="clock-date">—</div>
+      <div class="clock-hijri" id="clock-hijri">—</div>
+    </div>
+    <div class="sel-card">
+      <div class="sel-title">📆 اليوم بالتفصيل</div>
+      <div class="detail-row"><span class="dl">اليوم</span><span class="dv" id="td-day">—</span></div>
+      <div class="detail-row"><span class="dl">الميلادي</span><span class="dv jade" id="td-greg">—</span></div>
+      <div class="detail-row"><span class="dl">الهجري</span><span class="dv gold" id="td-hijri">—</span></div>
+      <div class="detail-row"><span class="dl">اليوم في السنة</span><span class="dv" id="td-doy">—</span></div>
+      <div class="detail-row"><span class="dl">الأيام المتبقية</span><span class="dv" id="td-rem">—</span></div>
+      <div class="detail-row"><span class="dl">رقم الأسبوع</span><span class="dv" id="td-wk">—</span></div>
+    </div>
+    <div class="section-head"><span class="sh-icon">🌟</span><span class="sh-text">المناسبة الحالية</span><div class="sh-line"></div></div>
+    <div class="occ-list" id="todayOcc"></div>
+  </div>
+
+  <!-- HIJRI PAGE -->
+  <div class="page" id="page-hijri">
+    <div class="year-nav">
+      <button class="year-btn" onclick="prevHY()">‹</button>
+      <div class="year-lbl" id="hy-lbl">—</div>
+      <button class="year-btn" onclick="nextHY()">›</button>
+    </div>
+    <div class="section-head"><span class="sh-icon">🌙</span><span class="sh-text">أشهر السنة الهجرية</span><div class="sh-line"></div></div>
+    <div class="hijri-months-grid" id="hjGrid"></div>
+    <div class="section-head"><span class="sh-icon">🌟</span><span class="sh-text">المناسبات الإسلامية</span><div class="sh-line"></div></div>
+    <div class="occ-list" id="allOcc"></div>
+  </div>
+
+  <!-- CONVERT PAGE -->
+  <div class="page" id="page-conv">
+    <div class="conv-card">
+      <div class="conv-title">ميلادي ← هجري</div>
+      <div class="conv-row">
+        <div class="conv-input-wrap"><div class="conv-label">السنة</div><input class="conv-input" type="number" id="g2h-y" value="2025"></div>
+        <div class="conv-input-wrap"><div class="conv-label">الشهر</div><input class="conv-input" type="number" id="g2h-m" min="1" max="12" value="1"></div>
+        <div class="conv-input-wrap"><div class="conv-label">اليوم</div><input class="conv-input" type="number" id="g2h-d" min="1" max="31" value="1"></div>
+      </div>
+      <button class="conv-btn" onclick="convertG2H()">تحويل إلى هجري</button>
+      <div class="conv-result" id="g2h-res">النتيجة ستظهر هنا</div>
+    </div>
+    <div class="conv-card">
+      <div class="conv-title">هجري ← ميلادي</div>
+      <div class="conv-row">
+        <div class="conv-input-wrap"><div class="conv-label">السنة</div><input class="conv-input" type="number" id="h2g-y" value="1446"></div>
+        <div class="conv-input-wrap"><div class="conv-label">الشهر</div><input class="conv-input" type="number" id="h2g-m" min="1" max="12" value="1"></div>
+        <div class="conv-input-wrap"><div class="conv-label">اليوم</div><input class="conv-input" type="number" id="h2g-d" min="1" max="30" value="1"></div>
+      </div>
+      <button class="conv-btn" onclick="convertH2G()">تحويل إلى ميلادي</button>
+      <div class="conv-result" id="h2g-res">النتيجة ستظهر هنا</div>
+    </div>
+    <div class="section-head"><span class="sh-icon">📖</span><span class="sh-text">الأشهر الهجرية</span><div class="sh-line"></div></div>
+    <div class="occ-list" id="monthInfo"></div>
+  </div>
+
+</main>
+
+<nav class="bottomnav">
+  <button class="bn-item on" id="bn-cal" onclick="showPage('cal')"><span class="bn-icon">📅</span><span class="bn-lbl">الرزنامة</span></button>
+  <button class="bn-item" id="bn-today" onclick="showPage('today')"><span class="bn-icon">☀️</span><span class="bn-lbl">اليوم</span></button>
+  <button class="bn-item" id="bn-hijri" onclick="showPage('hijri')"><span class="bn-icon">🌙</span><span class="bn-lbl">هجري</span></button>
+  <button class="bn-item" id="bn-conv" onclick="showPage('conv')"><span class="bn-icon">⇄</span><span class="bn-lbl">تحويل</span></button>
+</nav>
+</div>
+
+<script>
+/* ── HIJRI ENGINE ── */
+const HM=['محرم','صفر','ربيع الأول','ربيع الثاني','جمادى الأولى','جمادى الثانية','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
+const GM=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const DA=['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const DS=['أح','إث','ثل','أر','خم','جم','سب'];
+
+const SPECIAL={
+  '1-1':'رأس السنة الهجرية 🎊','1-10':'يوم عاشوراء 🕌',
+  '3-12':'المولد النبوي الشريف 🌹','7-27':'ليلة المعراج 🌌',
+  '8-15':'ليلة النصف من شعبان ✨','9-1':'أول رمضان المبارك 🌙',
+  '9-27':'ليلة القدر 🌟','10-1':'عيد الفطر المبارك 🎉',
+  '10-2':'ثاني أيام عيد الفطر','10-3':'ثالث أيام عيد الفطر',
+  '12-9':'يوم عرفة 🕌','12-10':'عيد الأضحى المبارك 🐑',
+  '12-11':'ثاني أيام عيد الأضحى','12-12':'ثالث أيام عيد الأضحى','12-13':'رابع أيام عيد الأضحى'
+};
+const ICONS={'1-1':'🎊','1-10':'🕌','3-12':'🌹','7-27':'🌌','8-15':'✨','9-1':'🌙','9-27':'🌟','10-1':'🎉','10-2':'🎉','10-3':'🎉','12-9':'🕌','12-10':'🐑','12-11':'🐑','12-12':'🐑','12-13':'🐑'};
+const MONTHS_INFO=[
+  {note:'الشهر الأول – من الأشهر الحرم',events:['رأس السنة (١)','عاشوراء (١٠)']},
+  {note:'الشهر الثاني',events:[]},
+  {note:'شهر المولد النبوي الشريف',events:['المولد (١٢)']},
+  {note:'الشهر الرابع',events:[]},
+  {note:'الشهر الخامس',events:[]},
+  {note:'الشهر السادس',events:[]},
+  {note:'من الأشهر الحرم',events:['ليلة المعراج (٢٧)']},
+  {note:'شهر النبي ﷺ',events:['نصف شعبان (١٥)']},
+  {note:'شهر الصيام المبارك',events:['أول رمضان (١)','ليلة القدر (٢٧)']},
+  {note:'شهر عيد الفطر',events:['العيد (١)']},
+  {note:'من الأشهر الحرم',events:[]},
+  {note:'موسم الحج – من الأشهر الحرم',events:['عرفة (٩)','الأضحى (١٠)']}
+];
+
+function gToJD(y,m,d){if(m<3){y--;m+=12;}const A=Math.floor(y/100),B=2-A+Math.floor(A/4);return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5;}
+function jdToH(jd){const l=Math.floor(jd)-1948440+10632,n=Math.floor((l-1)/10631),l2=l-10631*n+354,J=Math.floor((10985-l2)/5316)*Math.floor((50*l2)/17719)+Math.floor(l2/5670)*Math.floor((43*l2)/15238),l3=l2-Math.floor((30-J)/15)*Math.floor((17719*J)/50)-Math.floor(J/16)*Math.floor((15238*J)/43)+29,month=Math.floor((24*l3)/709),day=l3-Math.floor((709*month)/24),year=30*n+J-30;return{year,month,day};}
+function gToH(y,m,d){return jdToH(gToJD(y,m,d));}
+function hToJD(hy,hm,hd){return Math.floor((11*hy+3)/30)+354*hy+30*hm-Math.floor((hm-1)/2)+hd+1948440-385;}
+function jdToG(jd){const z=Math.floor(jd+.5),a=Math.floor((z-1867216.25)/36524.25),A=z+1+a-Math.floor(a/4),B=A+1524,C=Math.floor((B-122.1)/365.25),D=Math.floor(365.25*C),E=Math.floor((B-D)/30.6001),day=B-D-Math.floor(30.6001*E),month=E<14?E-1:E-13,year=month>2?C-4716:C-4715;return{year,month,day};}
+function hToG(hy,hm,hd){return jdToG(hToJD(hy,hm,hd));}
+function hML(hy,hm){if(hm%2===1)return 30;if(hm===12){return[2,5,7,10,13,16,18,21,24,26,29].includes(hy%30)?30:29;}return 29;}
+function toAr(n){return String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);}
+function padZ(n){return String(n).padStart(2,'0');}
+function wkNum(d){const s=new Date(d.getFullYear(),0,1);return Math.ceil(((d-s)/86400000+s.getDay()+1)/7);}
+
+/* ── STATE ── */
+const NOW=new Date();
+let selD={y:NOW.getFullYear(),m:NOW.getMonth()+1,d:NOW.getDate()};
+let viewG=true;
+let calY=NOW.getFullYear(),calM=NOW.getMonth()+1;
+const todH=gToH(NOW.getFullYear(),NOW.getMonth()+1,NOW.getDate());
+let calHY=todH.year,calHM=todH.month,viewHY=todH.year;
+let lightMode=false;
+
+/* ── TODAY STRIP ── */
+function renderStrip(){
+  const h=gToH(NOW.getFullYear(),NOW.getMonth()+1,NOW.getDate());
+  document.getElementById('ts-hday').textContent=toAr(h.day);
+  document.getElementById('ts-hmonth').textContent=HM[h.month-1];
+  document.getElementById('ts-hyear').textContent=toAr(h.year)+' هـ';
+  document.getElementById('ts-gday').textContent=NOW.getDate();
+  document.getElementById('ts-gmonth').textContent=GM[NOW.getMonth()];
+  document.getElementById('ts-gyear').textContent=NOW.getFullYear()+' م';
+}
+
+/* ── CALENDAR ── */
+function setView(v){
+  viewG=v==='g';
+  document.getElementById('tab-g').className='tab'+(viewG?' on':'');
+  document.getElementById('tab-h').className='tab'+(viewG?'':' on');
+  renderCal();
+}
+
+function renderCal(){viewG?renderGCal():renderHCal();}
+
+function renderGCal(){
+  const y=calY,m=calM;
+  const h1=gToH(y,m,1),h2=gToH(y,m,new Date(y,m,0).getDate());
+  let hr=HM[h1.month-1];if(h1.month!==h2.month)hr+=' – '+HM[h2.month-1];hr+=' '+toAr(h1.year)+' هـ';
+  document.getElementById('cal-main').textContent=GM[m-1]+' '+y+' م';
+  document.getElementById('cal-sub').textContent=hr;
+  document.getElementById('weekrow').innerHTML=DS.map((d,i)=>`<div class="wd${i===5?' fri':''}">${d}</div>`).join('');
+  const days=new Date(y,m,0).getDate(),fdow=new Date(y,m-1,1).getDay(),prev=new Date(y,m-1,0).getDate();
+  let html='';
+  for(let i=fdow-1;i>=0;i--){const pd=prev-i,pm=m===1?12:m-1,py=m===1?y-1:y,h=gToH(py,pm,pd);html+=`<div class="dc other empty"><span class="gd">${pd}</span><span class="hd">${toAr(h.day)}</span></div>`;}
+  for(let d=1;d<=days;d++){const dow=new Date(y,m-1,d).getDay(),h=gToH(y,m,d),iT=y===NOW.getFullYear()&&m===NOW.getMonth()+1&&d===NOW.getDate(),iS=y===selD.y&&m===selD.m&&d===selD.d,sp=SPECIAL[`${h.month}-${h.day}`];let cls='dc';if(dow===5)cls+=' fri';if(iT)cls+=' today';if(iS)cls+=' sel';html+=`<div class="${cls}" onclick="selDay(${y},${m},${d})"><span class="gd">${d}</span><span class="hd">${toAr(h.day)}</span>${sp?'<span class="event-dot"></span>':''}</div>`;}
+  const rem=(fdow+days)%7===0?0:7-(fdow+days)%7;
+  for(let d=1;d<=rem;d++){const nm=m===12?1:m+1,ny=m===12?y+1:y,h=gToH(ny,nm,d);html+=`<div class="dc other empty"><span class="gd">${d}</span><span class="hd">${toAr(h.day)}</span></div>`;}
+  document.getElementById('daygrid').innerHTML=html;
+}
+
+function renderHCal(){
+  const hy=calHY,hm=calHM,days=hML(hy,hm);
+  const g1=jdToG(hToJD(hy,hm,1)),gL=jdToG(hToJD(hy,hm,days));
+  let gr=GM[g1.month-1];if(g1.month!==gL.month)gr+=' – '+GM[gL.month-1];gr+=' '+g1.year+' م';
+  document.getElementById('cal-main').textContent=HM[hm-1]+' '+toAr(hy)+' هـ';
+  document.getElementById('cal-sub').textContent=gr;
+  document.getElementById('weekrow').innerHTML=DS.map((d,i)=>`<div class="wd${i===5?' fri':''}">${d}</div>`).join('');
+  const fdow=new Date(g1.year,g1.month-1,g1.day).getDay();
+  let html='';
+  for(let i=0;i<fdow;i++)html+=`<div class="dc empty"></div>`;
+  for(let hd=1;hd<=days;hd++){const go=jdToG(hToJD(hy,hm,hd)),dow=new Date(go.year,go.month-1,go.day).getDay(),iT=go.year===NOW.getFullYear()&&go.month===NOW.getMonth()+1&&go.day===NOW.getDate(),iS=go.year===selD.y&&go.month===selD.m&&go.day===selD.d,sp=SPECIAL[`${hm}-${hd}`];let cls='dc';if(dow===5)cls+=' fri';if(iT)cls+=' today';if(iS)cls+=' sel';html+=`<div class="${cls}" onclick="selDay(${go.year},${go.month},${go.day})"><span class="gd">${toAr(hd)}</span><span class="hd">${go.day}</span>${sp?'<span class="event-dot"></span>':''}</div>`;}
+  const rem=(fdow+days)%7===0?0:7-(fdow+days)%7;
+  for(let i=0;i<rem;i++)html+=`<div class="dc empty"></div>`;
+  document.getElementById('daygrid').innerHTML=html;
+}
+
+function selDay(y,m,d){selD={y,m,d};renderCal();renderSelDetail();}
+
+function renderSelDetail(){
+  const{y,m,d}=selD,h=gToH(y,m,d),date=new Date(y,m-1,d),dow=date.getDay(),sp=SPECIAL[`${h.month}-${h.day}`];
+  document.getElementById('det-greg').textContent=`${d} ${GM[m-1]} ${y} م`;
+  document.getElementById('det-hijri').textContent=`${toAr(h.day)} ${HM[h.month-1]} ${toAr(h.year)} هـ`;
+  document.getElementById('det-day').textContent=DA[dow];
+  document.getElementById('det-week').textContent=`الأسبوع ${toAr(wkNum(date))}`;
+  if(sp){document.getElementById('det-ev-wrap').style.display='';document.getElementById('det-ev').textContent=sp;}
+  else document.getElementById('det-ev-wrap').style.display='none';
+}
+
+function prevM(){if(viewG){calM===1?(calM=12,calY--):calM--;}else{calHM===1?(calHM=12,calHY--):calHM--;}renderCal();}
+function nextM(){if(viewG){calM===12?(calM=1,calY++):calM++;}else{calHM===12?(calHM=1,calHY++):calHM++;}renderCal();}
+function goToday(){calY=NOW.getFullYear();calM=NOW.getMonth()+1;calHY=todH.year;calHM=todH.month;selD={y:NOW.getFullYear(),m:NOW.getMonth()+1,d:NOW.getDate()};renderCal();renderSelDetail();}
+
+/* ── OCCASIONS ── */
+function renderOcc(){
+  const todJD=gToJD(NOW.getFullYear(),NOW.getMonth()+1,NOW.getDate()),up=[];
+  for(let off=0;off<=365;off++){const jd=todJD+off,g=jdToG(jd),h=jdToH(jd),k=`${h.month}-${h.day}`;if(SPECIAL[k]){up.push({g,h,name:SPECIAL[k],icon:ICONS[k]||'🌙',off});if(up.length>=5)break;}}
+  document.getElementById('occList').innerHTML=up.map(u=>{
+    let tag=u.off===0?`<span class="occ-tag today-tag">اليوم</span>`:u.off===1?`<span class="occ-tag soon">غداً</span>`:u.off<=7?`<span class="occ-tag soon">هذا الأسبوع</span>`:`<span class="occ-tag">بعد ${toAr(u.off)} يوم</span>`;
+    return`<div class="occ-item"><div class="occ-badge">${u.icon}</div><div class="occ-info"><div class="occ-name">${u.name}</div><div class="occ-date">${toAr(u.h.day)} ${HM[u.h.month-1]} · ${u.g.day} ${GM[u.g.month-1]} ${u.g.year}</div></div>${tag}</div>`;
+  }).join('');
+}
+
+/* ── PAGES ── */
+function showPage(p){
+  ['cal','today','hijri','conv'].forEach(id=>{
+    document.getElementById('page-'+id).className='page'+(p===id?' on':'');
+    document.getElementById('bn-'+id).className='bn-item'+(p===id?' on':'');
+  });
+  if(p==='today')renderTodayPage();
+  if(p==='hijri')renderHijriPage();
+  if(p==='conv')renderConvPage();
+}
+
+/* ── TODAY PAGE ── */
+function renderTodayPage(){
+  const h=gToH(NOW.getFullYear(),NOW.getMonth()+1,NOW.getDate());
+  document.getElementById('td-day').textContent=DA[NOW.getDay()];
+  document.getElementById('td-greg').textContent=`${NOW.getDate()} ${GM[NOW.getMonth()]} ${NOW.getFullYear()} م`;
+  document.getElementById('td-hijri').textContent=`${toAr(h.day)} ${HM[h.month-1]} ${toAr(h.year)} هـ`;
+  const s=new Date(NOW.getFullYear(),0,0),doy=Math.floor((NOW-s)/86400000);
+  const leap=((NOW.getFullYear()%4===0&&NOW.getFullYear()%100!==0)||NOW.getFullYear()%400===0)?366:365;
+  document.getElementById('td-doy').textContent=toAr(doy);
+  document.getElementById('td-rem').textContent=toAr(leap-doy);
+  document.getElementById('td-wk').textContent=toAr(wkNum(NOW));
+  const k=`${h.month}-${h.day}`;
+  const todOcc=document.getElementById('todayOcc');
+  if(SPECIAL[k]){todOcc.innerHTML=`<div class="occ-item"><div class="occ-badge">${ICONS[k]||'🌙'}</div><div class="occ-info"><div class="occ-name">${SPECIAL[k]}</div><div class="occ-date">اليوم مناسبة إسلامية</div></div><span class="occ-tag today-tag">اليوم</span></div>`;}
+  else{todOcc.innerHTML=`<div class="occ-item"><div class="occ-badge">📅</div><div class="occ-info"><div class="occ-name">لا توجد مناسبة اليوم</div><div class="occ-date">يوم عادي</div></div></div>`;}
+}
+
+function runClock(){
+  const t=new Date(),h=gToH(t.getFullYear(),t.getMonth()+1,t.getDate());
+  document.getElementById('clock').textContent=`${padZ(t.getHours())}:${padZ(t.getMinutes())}:${padZ(t.getSeconds())}`;
+  document.getElementById('clock-date').textContent=`${DA[t.getDay()]} · ${t.getDate()} ${GM[t.getMonth()]} ${t.getFullYear()} م`;
+  document.getElementById('clock-hijri').textContent=`${toAr(h.day)} ${HM[h.month-1]} ${toAr(h.year)} هـ`;
+}
+
+/* ── HIJRI PAGE ── */
+function renderHijriPage(){
+  document.getElementById('hy-lbl').textContent=`السنة ${toAr(viewHY)} هـ`;
+  document.getElementById('hjGrid').innerHTML=HM.map((mn,i)=>{const hm=i+1,g1=jdToG(hToJD(viewHY,hm,1));return`<div class="hm-card${calHY===viewHY&&calHM===hm?' active':''}" onclick="jumpHM(${hm})"><div class="hm-num">${toAr(hm)}</div><div class="hm-name">${mn}</div><div class="hm-greg">${GM[g1.month-1]} ${g1.year}</div></div>`;}).join('');
+  document.getElementById('allOcc').innerHTML=Object.entries(SPECIAL).map(([k,v])=>{const[hm,hd]=k.split('-').map(Number),go=jdToG(hToJD(viewHY,hm,hd));return`<div class="occ-item"><div class="occ-badge">${ICONS[k]||'🌙'}</div><div class="occ-info"><div class="occ-name">${v}</div><div class="occ-date">${toAr(hd)} ${HM[hm-1]} ${toAr(viewHY)} هـ · ${go.day} ${GM[go.month-1]} ${go.year}</div></div></div>`;}).join('');
+}
+function prevHY(){viewHY--;renderHijriPage();}
+function nextHY(){viewHY++;renderHijriPage();}
+function jumpHM(hm){calHY=viewHY;calHM=hm;setView('h');showPage('cal');}
+
+/* ── CONVERT PAGE ── */
+function convertG2H(){
+  const y=+document.getElementById('g2h-y').value,m=+document.getElementById('g2h-m').value,d=+document.getElementById('g2h-d').value;
+  if(!y||m<1||m>12||d<1||d>31){document.getElementById('g2h-res').textContent='بيانات غير صحيحة';return;}
+  try{const h=gToH(y,m,d),dow=new Date(y,m-1,d).getDay();document.getElementById('g2h-res').textContent=`${DA[dow]}  ${toAr(h.day)} ${HM[h.month-1]} ${toAr(h.year)} هـ`;}catch(e){document.getElementById('g2h-res').textContent='خطأ';}
+}
+function convertH2G(){
+  const hy=+document.getElementById('h2g-y').value,hm=+document.getElementById('h2g-m').value,hd=+document.getElementById('h2g-d').value;
+  if(!hy||hm<1||hm>12||hd<1||hd>30){document.getElementById('h2g-res').textContent='بيانات غير صحيحة';return;}
+  try{const g=hToG(hy,hm,hd),dow=new Date(g.year,g.month-1,g.day).getDay();document.getElementById('h2g-res').textContent=`${DA[dow]}  ${g.day} ${GM[g.month-1]} ${g.year} م`;}catch(e){document.getElementById('h2g-res').textContent='خطأ';}
+}
+function renderConvPage(){
+  document.getElementById('monthInfo').innerHTML=HM.map((mn,i)=>{const mi=MONTHS_INFO[i];return`<div class="occ-item"><div class="occ-badge" style="font-family:'Amiri',serif;font-size:.75rem;color:var(--gold2)">${toAr(i+1)}</div><div class="occ-info"><div class="occ-name">${mn}</div><div class="occ-date">${mi.note}${mi.events.length?' · '+mi.events.join(' ، '):''}</div></div></div>`;}).join('');
+}
+
+/* ── THEME ── */
+function toggleTheme(){
+  lightMode=!lightMode;
+  const r=document.documentElement.style;
+  if(lightMode){r.setProperty('--ink','#f0ece0');r.setProperty('--ink2','#e8e2d2');r.setProperty('--ink3','#ddd8c8');r.setProperty('--ink4','#ccc6b4');r.setProperty('--pearl','#1a1612');r.setProperty('--pearl2','#3a3228');r.setProperty('--pearl3','#6a5e4e');r.setProperty('--pearl4','#9a9080');r.setProperty('--gold','#8b5e10');r.setProperty('--gold2','#7a5010');r.setProperty('--jade','#0a6e44');}
+  else{r.setProperty('--ink','#050810');r.setProperty('--ink2','#0d1220');r.setProperty('--ink3','#141928');r.setProperty('--ink4','#1c2335');r.setProperty('--pearl','#e8e2d4');r.setProperty('--pearl2','#b8b09a');r.setProperty('--pearl3','#6a6256');r.setProperty('--pearl4','#3a3530');r.setProperty('--gold','#d4a843');r.setProperty('--gold2','#f0c96a');r.setProperty('--jade','#3ecf8e');}
+}
+
+/* ── PWA ── */
+let dp;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();dp=e;
+  document.getElementById('installBanner').classList.add('show');
+  document.getElementById('installBanner').addEventListener('click',async()=>{
+    document.getElementById('installBanner').classList.remove('show');
+    dp.prompt();await dp.userChoice;dp=null;
+  });
+});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* ── INIT ── */
+renderStrip();
+renderCal();
+selDay(NOW.getFullYear(),NOW.getMonth()+1,NOW.getDate());
+renderOcc();
+setInterval(runClock,1000);
+runClock();
+</script>
+</body>
+</html>
